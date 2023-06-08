@@ -15,7 +15,7 @@ class ApproverMatrix(models.Model):
         verbose_name_plural = "ApproverMatrix"
 
 
-class ApproverTransaction(models.Model):
+class AppTransaction(models.Model):
     procurementId = models.ForeignKey(MasterProcurement, on_delete=models.CASCADE)
     sequence = models.IntegerField(default=0, blank=True, null=True)
     approverEmail = models.EmailField(max_length=100, blank=True, null=True)
@@ -28,8 +28,8 @@ class ApproverTransaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "ApproverTransaction"
-        verbose_name_plural = "ApproverTransaction"
+        db_table = "AppTransaction"
+        verbose_name_plural = "AppTransaction"
 
 
     

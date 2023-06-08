@@ -16,6 +16,7 @@ class MasterUpload(models.Model):
         db_table = "MasterUpload"
         verbose_name_plural = "MasterUpload"
     
+
 class MasterProcurement(models.Model):
     CHOICES1 = (('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('Cancelled', 'Cancelled'))
     CHOICES2 = (('New', 'New'), ('Rental', 'Rental'))
@@ -27,7 +28,6 @@ class MasterProcurement(models.Model):
     TotalBudget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     UtilizedBudget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     Remarks = models.TextField(null=True, blank=True)
-    
     PurchaseDate = models.DateField(null=True, blank=True,default=datetime.date.today)
     Age = models.IntegerField(default=0, null=True, blank=True)
     Status = models.CharField(max_length=100, choices=CHOICES1, null=True, blank=True, default='Pending')
@@ -39,16 +39,34 @@ class MasterProcurement(models.Model):
     Updated_at = models.DateTimeField(auto_now_add=True, null=True)
 
     def save(self, *args, **kwargs):
-        if not self.RequestNumber and self.RequestType!=None:
-            cureentYear = str(datetime.datetime.now().year)
-            self.RequestNumber = self.RequestType[:].upper() + cureentYear[:] + str(random.randint(1000, 9999))
+        created = not self.pk 
+        super().save(*args, **kwargs)
+        if created:
+            from approval.models import AppTransaction
+            app_tarns = AppTransaction(
+                procurementId=self,
+                sequence=1,
+                approverEmail="Ankul.Gautam@yokogawa.com",
+                status="Pending",
+                remarks="",
+                approvaldatetime=None,
+                create_by=self.Created_by,
+                update_by=self.Updated_by,
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now()
+            )
+            app_tarns.save()
+            print("App Transaction Created")
         else:
-            pass
-        return super(MasterProcurement, self).save(*args, **kwargs)
+            print("App Transaction Not Created")
+            
+
+
 
     class Meta:
         db_table = "MasterProcurement"
         ordering = ['id']
+
 
 class InlineItem(models.Model):
     procurement = models.ForeignKey(MasterProcurement, related_name='inlineitem', on_delete=models.CASCADE)
@@ -65,6 +83,8 @@ class InlineItem(models.Model):
     class Meta:
         db_table = "InlineItem"
         ordering = ['id']
+
+
 
 
 
