@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from master.models import *
-import random
 import datetime
 
 
@@ -39,29 +38,31 @@ class MasterProcurement(models.Model):
     Updated_at = models.DateTimeField(auto_now_add=True, null=True)
 
     def save(self, *args, **kwargs):
-        created = not self.pk 
+        created = not self.pk
+        if created and not self.RequestNumber and self.RequestType:
+            cureentYear = str(datetime.datetime.now().year)
+            self.RequestNumber = ''.join([word[0] for word in self.RequestType.split()]) + cureentYear[:] + str(MasterProcurement.objects.filter(RequestType=self.RequestType).count() + 1).zfill(4)
         super().save(*args, **kwargs)
         if created:
-            from approval.models import AppTransaction
-            app_tarns = AppTransaction(
-                procurementId=self,
-                sequence=1,
-                approverEmail="Ankul.Gautam@yokogawa.com",
-                status="Pending",
-                remarks="",
-                approvaldatetime=None,
-                create_by=self.Created_by,
-                update_by=self.Updated_by,
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now()
-            )
-            app_tarns.save()
-            print("App Transaction Created")
-        else:
-            print("App Transaction Not Created")
-            
-
-
+            from approval.models import AppTransaction ,ApproverMatrix
+            appmat = ApproverMatrix.objects.filter(request_type=self.RequestType).order_by('sequence')
+            for app in appmat:
+                if app.sequence == 1:
+                    userOrgDept = User.objects.get(id=self.Created_by.id).OrgDepartmentId
+                    userOrgDeptHead = OrgDepartmentHead.objects.filter(OrgDepartment_id=userOrgDept).first()
+                    userOrgDeptHeadEmail = User.objects.get(username=userOrgDeptHead.Head).email
+                    approverEmail = userOrgDeptHeadEmail
+                elif app.sequence == 2:
+                    approverEmail = 'Jiya.K@yokogawa.com'
+                elif app.sequence == 3:
+                    approverEmail = 'ganeshchandra.p@yokogawa.com'
+                elif app.sequence == 4:
+                    approverEmail = 'sajiv.nath@yokogawa.com'
+                elif app.sequence == 5:
+                    approverEmail = 'Lingarajan.R@Yokogawa.com'
+                else:
+                    approverEmail = ''
+                AppTransaction.objects.create(procurementId=self, sequence=app.sequence, approverEmail=approverEmail, status='Pending', create_by=self.Created_by, update_by=self.Updated_by)
 
     class Meta:
         db_table = "MasterProcurement"
