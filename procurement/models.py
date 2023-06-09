@@ -44,7 +44,7 @@ class MasterProcurement(models.Model):
             self.RequestNumber = ''.join([word[0] for word in self.RequestType.split()]) + cureentYear[:] + str(MasterProcurement.objects.filter(RequestType=self.RequestType).count() + 1).zfill(4)
         super().save(*args, **kwargs)
         if created:
-            from approval.models import AppTransaction ,ApproverMatrix
+            from approval.models import ApprovalTransaction ,ApproverMatrix
             appmat = ApproverMatrix.objects.filter(request_type=self.RequestType).order_by('sequence')
             for app in appmat:
                 if app.sequence == 1:
@@ -62,7 +62,7 @@ class MasterProcurement(models.Model):
                     approverEmail = 'Lingarajan.R@Yokogawa.com'
                 else:
                     approverEmail = ''
-                AppTransaction.objects.create(procurementId=self, sequence=app.sequence, approverEmail=approverEmail, status='Pending', create_by=self.Created_by, update_by=self.Updated_by)
+                ApprovalTransaction.objects.create(procurementId=self, sequence=app.sequence, approverEmail=approverEmail, status='Pending', create_by=self.Created_by, update_by=self.Updated_by)
 
     class Meta:
         db_table = "MasterProcurement"

@@ -366,7 +366,13 @@ class ImportMasterItem(APIView):
                         BoolInUse = row['BoolInUse'],
                     )
                 else:
-                    return Response("Category not found")
+                    MasterCategory.objects.create(
+                        ItemName = row['ItemName'],
+                        ItemCategoryId = category[0],
+                        UnitPrice = row['UnitPrice'],
+                        BoolInUse = row['BoolInUse'],
+                    )
+                    
             return Response({'status': 'success', 'message': 'File uploaded successfully'})
         else:
             return Response("No file found")

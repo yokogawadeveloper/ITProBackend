@@ -6,50 +6,107 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from .serializers import *
+from procurement.models import *
 
-# Create your views here.
-class ApproverMatrixViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
+# Create your views here. 
+class ApprovalTransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
-        return ApproverMatrix.objects.all()
+        return ApprovalTransaction.objects.all()
     
+
     def get_serializer_class(self):
-        return ApproverMatrixSerializer
+        return ApprovalTransactionSerializer
     
-    def create(self, request, *args, **kwargs):
-        primary_approver = request.data['primary_approver']
-        secondary_approver = request.data['secondary_approver']
-        primary_approver = User.objects.filter(username=primary_approver).values_list('id', flat=True).first()
-        secondary_approver = User.objects.filter(username=secondary_approver).values_list('id', flat=True).first()
 
-        request.data._mutable = True # make it mutable
-        request.data['primary_approver'] = primary_approver
-        request.data['secondary_approver'] = secondary_approver
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
 
-        serializer = self.get_serializer(data=request.data)
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        sequence = instance.sequence   # get sequence number
+        if sequence == 1:
+            instance.status = request.data['status']
+            instance.remarks = request.data['remarks']
+            instance.create_by = request.user
+            instance.update_by = request.user
+            instance.save()
+            serializer.save()
+            return Response(serializer.data)
+    
+        elif sequence == 2:
+            sequence_1_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=1, status='Approved').exists()
+            if sequence_1_approved:
+                instance.status = request.data['status']
+                instance.remarks = request.data['remarks']
+                instance.create_by = request.user
+                instance.update_by = request.user
+                instance.save()
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response({'error': 'Sequence 1 approval is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif sequence == 3:
+            sequence_2_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=2, status='Approved').exists()
+            if sequence_2_approved:
+                instance.status = request.data['status']
+                instance.remarks = request.data['remarks']
+                instance.create_by = request.user
+                instance.update_by = request.user
+                instance.save()
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response({'error': 'Sequence 2 approval is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        elif sequence == 4:
+            sequence_3_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=3, status='Approved').exists()
+            if sequence_3_approved:
+                instance.status = request.data['status']
+                instance.remarks = request.data['remarks']
+                instance.create_by = request.user
+                instance.update_by = request.user
+                instance.save()
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response({'error': 'Sequence 3 approval is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+
+
+        elif sequence == 5:
+            sequence_4_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=4, status='Approved').exists()
+            if sequence_4_approved:
+                instance.status = request.data['status']
+                instance.remarks = request.data['remarks']
+                instance.create_by = request.user
+                instance.update_by = request.user
+                instance.save()
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response({'error': 'Sequence 4 approval is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid sequence'}, status=status.HTTP_400_BAD_REQUEST)
         
-    @action(detail=False, methods=['post'])
-    def authenticate_approver(self, request, *args , **kwargs):
-        user = request.user
-        approver = ApproverMatrix.objects.filter(Q(primary_approver=user) | Q(secondary_approver=user)).first()
-        if approver:
-            return Response({'is_approver': True}, status=status.HTTP_200_OK)
-        else:
-            return Response({'is_approver': False}, status=status.HTTP_200_OK)
         
+
+
+
+        
+    
         
 
     
 
         
-
-        
     
+
+    
+
     

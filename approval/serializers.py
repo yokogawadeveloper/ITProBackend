@@ -6,10 +6,17 @@ User =  get_user_model()
 
 # Create serialiazers here..
 class ApproverMatrixSerializer(serializers.ModelSerializer):
-    user_name = serializers.ReadOnlyField(source="User.username")
     class Meta:
         model = ApproverMatrix
         fields = '__all__'
+
+
+
+class ApprovalTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApprovalTransaction
+        fields = '__all__'
+
 
 
 
