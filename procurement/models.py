@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q
 from master.models import *
 import datetime
 
@@ -17,7 +18,6 @@ class MasterUpload(models.Model):
     
 
 class MasterProcurement(models.Model):
-    CHOICES1 = (('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('Cancelled', 'Cancelled'))
     CHOICES2 = (('New', 'New'), ('Rental', 'Rental'))
     RequestNumber = models.CharField(max_length=100, null=True, blank=True)
     RequestType = models.CharField(max_length=100, null=True, blank=True)
@@ -29,7 +29,7 @@ class MasterProcurement(models.Model):
     Remarks = models.TextField(null=True, blank=True)
     PurchaseDate = models.DateField(null=True, blank=True,default=datetime.date.today)
     Age = models.IntegerField(default=0, null=True, blank=True)
-    Status = models.CharField(max_length=100, choices=CHOICES1, null=True, blank=True, default='Pending')
+    Status = models.CharField(max_length=100, null=True, blank=True, default='Pending')
     DeviceType = models.CharField(max_length=100, choices=CHOICES2, null=True, blank=True)
     Attachment = models.ForeignKey(MasterUpload, on_delete=models.CASCADE, null=True, blank=True)
     Created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
@@ -52,18 +52,72 @@ class MasterProcurement(models.Model):
                     userOrgDeptHead = OrgDepartmentHead.objects.filter(OrgDepartment_id=userOrgDept).first()
                     userOrgDeptHeadEmail = User.objects.get(username=userOrgDeptHead.Head).email
                     approverEmail = userOrgDeptHeadEmail
-                elif app.sequence == 2:
-                    approverEmail = 'Jiya.K@yokogawa.com'
-                elif app.sequence == 3:
-                    approverEmail = 'ganeshchandra.p@yokogawa.com'
-                elif app.sequence == 4:
-                    approverEmail = 'sajiv.nath@yokogawa.com'
-                elif app.sequence == 5:
-                    approverEmail = 'Lingarajan.R@Yokogawa.com'
-                else:
-                    approverEmail = ''
-                ApprovalTransaction.objects.create(procurementId=self, sequence=app.sequence, approverEmail=approverEmail, status='Pending', create_by=self.Created_by, update_by=self.Updated_by)
+                    userId = User.objects.get(username=userOrgDeptHead.Head)
+                    #create approval transaction
+                    ApprovalTransaction.objects.create(
+                    procurementId=self,
+                    approverEmail=approverEmail,
+                    approvalUserName=userId.username,
+                    sequence=app.sequence,
+                    approverType='BuHead',
+                    status='Pending',
+                                )
 
+                elif app.sequence == 2:
+                    email = 'Jiya.K@yokogawa.com'
+                    user = User.objects.get(email = email)
+                    is_dsinhead = True
+                    #create approval transaction
+                    ApprovalTransaction.objects.create(
+                    procurementId=self,
+                    approvalUserName=user.username,
+                    approverEmail=email,
+                    sequence=app.sequence,
+                    approverType='DSINHead',
+                    status='Pending',
+                                )
+
+                elif app.sequence == 3:
+                    email = 'ganeshchandra.p@yokogawa.com'
+                    user = User.objects.get(email = email)
+                    is_financehead = True
+                    #create approval transaction
+                    ApprovalTransaction.objects.create(
+                    procurementId=self,
+                    approvalUserName=user.username,
+                    approverEmail=email,
+                    sequence=app.sequence,
+                    approverType='FinanceHead',
+                    status='Pending',
+                                )
+
+                elif app.sequence == 4:
+                    email = 'sajiv.nath@yokogawa.com'
+                    user = User.objects.get(email = email)
+                    is_md = True
+                    #create approval transaction
+                    ApprovalTransaction.objects.create(
+                    procurementId=self,
+                    approvalUserName=user.username,
+                    approverEmail=email,
+                    sequence=app.sequence,
+                    approverType='MD',
+                    status='Pending',
+                                )
+                elif app.sequence == 5:
+                    email = 'Naveen.R@yokogawa.com' 
+                    user = User.objects.get(email = email)
+                    is_dsinmprhead = True
+
+                    ApprovalTransaction.objects.create(
+                    procurementId=self,
+                    approvalUserName=user.username,
+                    approverEmail=email,
+                    sequence=app.sequence,
+                    approverType='DSINMPR',
+                    status='Pending',
+                                )
+                
     class Meta:
         db_table = "MasterProcurement"
         ordering = ['id']

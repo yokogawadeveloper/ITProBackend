@@ -9,7 +9,7 @@ User = get_user_model()
 class InlineItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InlineItem
-        fields = ['category','item','costcenter','quantity']
+        fields = ['category','item','costcenter','quantity','unitprice','totalprice']
 
 class MasterProcurementSerializer(serializers.ModelSerializer):
     inlineitem = InlineItemSerializer(many=True)

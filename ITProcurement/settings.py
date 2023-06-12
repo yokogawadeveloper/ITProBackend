@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'ITProcurement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ITProcurement2.0',
+        'NAME': 'ITProcurement',
         'USER': 'postgres',
         'PASSWORD': 'Yil@123456',
         'HOST': 'localhost',
@@ -119,9 +119,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static')
+# ]
 
 
 MEDIA_URL = '/media/'

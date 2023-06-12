@@ -16,20 +16,25 @@ class ApproverMatrix(models.Model):
 
 
 class ApprovalTransaction(models.Model):
+    CHOICES = (('BuHead', 'BuHead'), ('DSINHead', 'DSINHead'),('FinanceHead', 'FinanceHead'),('MD', 'MD'),
+    ('DSINMPR', 'DSINMPR'))
     procurementId = models.ForeignKey(MasterProcurement, on_delete=models.CASCADE)
-    sequence = models.IntegerField(default=0, blank=True, null=True)
+    approvalUserName = models.CharField(max_length=100, blank=True, null=True)
     approverEmail = models.EmailField(max_length=100, blank=True, null=True)
+    sequence = models.IntegerField(default=0, blank=True, null=True)
+    approverType = models.CharField(max_length=100, blank=True, null=True, choices=CHOICES)
     status = models.CharField(max_length=100, blank=True, null=True, default='Pending')
     remarks = models.CharField(max_length=100, blank=True, null=True)
     approvaldatetime = models.DateTimeField(blank=True, null=True)
-    create_by = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True ,related_name='create_by')
-    update_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='update_by')
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         db_table = "ApprovalTransaction"
         verbose_name_plural = "ApprovalTransaction"
+        ordering = ['id']
 
 
     
