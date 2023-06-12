@@ -11,6 +11,8 @@ from .serializers import *
 from procurement.serializers import *
 from procurement.models import *
 from .models import *
+from accounts.models import *
+from accounts.serializers import *
 
 
 
@@ -34,18 +36,42 @@ class ApprovalAuthenticateAPIView(APIView):
             return Response({'is_approver': is_approver})
 
 
+
 class LoggedInApprovalProcurementPendingList(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
         user = request.user
-        ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName = user) & Q(status='Pending')).order_by('sequence')
-        ProcurementId = ApprovalUser.values_list('procurementId', flat=True)
-        ProcurementDetails = MasterProcurement.objects.filter(id__in=ProcurementId)
+        ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending'))
         if ApprovalUser.exists():
-            serializer = MasterProcurementSerializer(ProcurementDetails, many=True)
-            return Response(serializer.data)
+            serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
+            data_list = []
+            for data in serializer.data:
+                procurement = MasterProcurement.objects.get(id=data['procurementId'])
+                procurement_serializer = MasterProcurementSerializer(procurement)
+                updated_data = {
+                    'id': data['id'],
+                    'approvalUserName': data['approvalUserName'],
+                    'approverEmail': data['approverEmail'],
+                    'sequence': data['sequence'],
+                    'approverType': data['approverType'],
+                    'status': data['status'],
+                    'procurementId': {
+                        'id': data['procurementId'],
+                        'sequence': data['sequence'],  # Include the sequence here
+                        'approverType': data['approverType'],
+                        'RequestNumber': procurement_serializer.data['RequestNumber'],
+                        'RequestType': procurement_serializer.data['RequestType'],
+                        'Name': procurement_serializer.data['Name'],
+                        'Status': procurement_serializer.data['Status'],
+                    }
+                }
+                data_list.append(updated_data)
+            return Response(data_list)
         else:
             return Response({'error': 'No pending approval'})
+
+
         
 
 class ApprovalProcurementDetailsByID(APIView):
@@ -55,6 +81,10 @@ class ApprovalProcurementDetailsByID(APIView):
         procurement = MasterProcurement.objects.get(id=pk)
         serializer = MasterProcurementSerializer(procurement)
         return Response(serializer.data)
+    
+        
+    
+    
     
 
 
@@ -76,13 +106,12 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
         if sequence == 1:
             # Update the ApprovalTransaction instance
             instance.status = request.data['status']
-            instance.remarks = request.data['remarks']
             instance.create_by = request.user
             instance.update_by = request.user
             instance.save()
             # Update the MasterProcurement instance
             procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-            procurement_instance.Status = request.data['status']
+            procurement_instance.Status = 'Approved Stage 1'
             procurement_instance.save()
             # Update the MasterProcurement instance
             serializer.save()
@@ -93,13 +122,12 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
             if sequence_1_approved:
                 # Update the ApprovalTransaction instance
                 instance.status = request.data['status']
-                instance.remarks = request.data['remarks']
                 instance.create_by = request.user
                 instance.update_by = request.user
                 instance.save()
                 # Update the MasterProcurement instance
                 procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                procurement_instance.Status = request.data['status']
+                procurement_instance.Status = 'Approved Stage 2'
                 procurement_instance.save()
                 # Update the MasterProcurement instance
                 serializer.save()
@@ -111,10 +139,14 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
             sequence_2_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=2, status='Approved').exists()
             if sequence_2_approved:
                 instance.status = request.data['status']
-                instance.remarks = request.data['remarks']
                 instance.create_by = request.user
                 instance.update_by = request.user
                 instance.save()
+                # Update the MasterProcurement instance
+                procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
+                procurement_instance.Status = 'Approved Stage 3'
+                procurement_instance.save()
+                # Update the MasterProcurement instance
                 serializer.save()
                 return Response(serializer.data)
             else:
@@ -124,10 +156,14 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
             sequence_3_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=3, status='Approved').exists()
             if sequence_3_approved:
                 instance.status = request.data['status']
-                instance.remarks = request.data['remarks']
                 instance.create_by = request.user
                 instance.update_by = request.user
                 instance.save()
+                # Update the MasterProcurement instance
+                procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
+                procurement_instance.Status = 'Approved Stage 4'
+                procurement_instance.save()
+                # Update the MasterProcurement instance
                 serializer.save()
                 return Response(serializer.data)
             else:
@@ -137,10 +173,14 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
             sequence_4_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId, sequence=4, status='Approved').exists()
             if sequence_4_approved:
                 instance.status = request.data['status']
-                instance.remarks = request.data['remarks']
                 instance.create_by = request.user
                 instance.update_by = request.user
                 instance.save()
+                # Update the MasterProcurement instance
+                procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
+                procurement_instance.Status = 'Approved'
+                procurement_instance.save()
+                # Update the MasterProcurement instance
                 serializer.save()
                 return Response(serializer.data)
             else:
@@ -148,24 +188,4 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
 
         else:
             return Response({'error': 'Invalid sequence'}, status=status.HTTP_400_BAD_REQUEST)    
-    
-        
-
-        
-
-
-
-
-
-        
-    
-        
-
-    
-
-        
-    
-
-    
-
     
