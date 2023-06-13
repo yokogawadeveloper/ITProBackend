@@ -93,3 +93,39 @@ class ApprovalTransaction(models.Model):
     
         
 
+
+
+# class LoggedInApprovalProcurementPendingList(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def get(self, request, *args, **kwargs):
+#         user = request.user
+#         ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending'))
+#         if ApprovalUser.exists():
+#             serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
+#             data_list = []
+#             for data in serializer.data:
+#                 procurement = MasterProcurement.objects.get(id=data['procurementId'])
+#                 procurement_serializer = MasterProcurementSerializer(procurement)
+#                 updated_data = {
+#                     'id': data['id'],
+#                     'approvalUserName': data['approvalUserName'],
+#                     'approverEmail': data['approverEmail'],
+#                     'sequence': data['sequence'],
+#                     'approverType': data['approverType'],
+#                     'status': data['status'],
+#                     'procurementId': {
+#                         'id': data['procurementId'],
+#                         'sequence': data['sequence'],  # Include the sequence here
+#                         'approverType': data['approverType'],
+#                         'RequestNumber': procurement_serializer.data['RequestNumber'],
+#                         'RequestType': procurement_serializer.data['RequestType'],
+#                         'Name': procurement_serializer.data['Name'],
+#                         'Status': procurement_serializer.data['Status'],
+#                     }
+#                 }
+#                 data_list.append(updated_data)
+#             return Response(data_list)
+#         else:
+#             return Response({'error': 'No pending approval'})
+

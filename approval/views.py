@@ -80,11 +80,23 @@ class ApprovalProcurementDetailsByID(APIView):
     def get(self, request, pk ,*args, **kwargs):
         procurement = MasterProcurement.objects.get(id=pk)
         serializer = MasterProcurementSerializer(procurement)
-        return Response(serializer.data)
+        # Get the approval transaction details
+        approval_transaction = ApprovalTransaction.objects.filter(procurementId=pk)
+        approval_transaction_serializer = ApprovalTransactionSerializer(approval_transaction, many=True)
+        # Get the procurement item details add sequence and approverType to the procurement serializer
+        return Response({
+            'id': serializer.data['id'],
+            'sequence': approval_transaction_serializer.data[0]['sequence'],
+            'approverType': approval_transaction_serializer.data[0]['approverType'],
+            'RequestNumber': serializer.data['RequestNumber'],
+            'RequestType': serializer.data['RequestType'],
+            'Name': serializer.data['Name'],
+            'Status': serializer.data['Status'],
+            'inlineitem': serializer.data['inlineitem'],
+        })
     
-        
-    
-    
+
+
     
 
 
