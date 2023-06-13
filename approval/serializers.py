@@ -16,7 +16,7 @@ class ApprovalTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApprovalTransaction
         fields = '__all__'
-
+        # depth = 1
 
 
         
