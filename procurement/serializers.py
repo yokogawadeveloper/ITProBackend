@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from .models import *
 
 
@@ -13,10 +14,9 @@ class InlineItemSerializer(serializers.ModelSerializer):
 
 class MasterProcurementSerializer(serializers.ModelSerializer):
     inlineitem = InlineItemSerializer(many=True)
-    department_name = serializers.ReadOnlyField(source='DepartmentId.DepartmentName')
     class Meta:
         model = MasterProcurement
-        fields = ['id','RequestNumber','RequestType','Name','DepartmentId', 'department_name','IsExpenditure','TotalBudget','UtilizedBudget','Remarks','PurchaseDate','Age', 'DeviceType','Status','inlineitem']
+        fields = ['id','RequestNumber','RequestType','Name','Department','IsExpenditure','TotalBudget','UtilizedBudget','Remarks','PurchaseDate','Age', 'DeviceType','Status','inlineitem']
 
     def create(self, validated_data):
         inlineitems_data = validated_data.pop('inlineitem')
@@ -28,25 +28,23 @@ class MasterProcurementSerializer(serializers.ModelSerializer):
         return masterprocurement
     
 
+    def update(self, instance, validated_data):
+        inlineitems_data = validated_data.pop('inlineitem', [])
+        instance = super().update(instance, validated_data)
 
+        # Delete any items not in the request
+        items = [item['id'] for item in inlineitems_data if 'id' in item]
+        for item in instance.inlineitem.all():
+            if item.id not in items:
+                item.delete()
 
+        # Create or update instance items
+        for item in inlineitems_data:
+            if 'id' in item:
+                item_instance = InlineItem.objects.get(id=item['id'])
+                InlineItem.objects.filter(id=item['id']).update(**item)
+            else:
+                InlineItem.objects.create(procurement=instance, **item)
 
+        return instance
 
-
-
-
-
-
-
-
-
-
-    
-    
-
-
-
-    
-    
-    
-    

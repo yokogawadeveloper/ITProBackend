@@ -52,7 +52,7 @@ ROOT_URLCONF = 'ITProcurement.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join( BASE_DIR, 'templates' )],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'ITProcurement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ITProcurement',
+        'NAME': 'ITProcurement2.0',
         'USER': 'postgres',
         'PASSWORD': 'Yil@123456',
         'HOST': 'localhost',
@@ -119,9 +119,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static')
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
 
 
 MEDIA_URL = '/media/'
@@ -160,6 +160,22 @@ SIMPLE_JWT = {
 # cors settings
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+
+
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = '10.29.15.142'
+EMAIL_HOST_USER = 'Yil-apps@yokogawa.com'
+EMAIL_PORT = 25
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+TO_RECEIVER = 'punya.hc@yokogawa.com'
+CC_RECEIVER = 'punya.hc@yokogawa.com'
+
+ACCOUNT_EMAIL_VERIFICATION = "none"
 
 
 

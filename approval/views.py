@@ -36,7 +36,6 @@ class ApprovalAuthenticateAPIView(APIView):
             return Response({'is_approver': is_approver})
 
 
-
 class LoggedInApprovalProcurementPendingList(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -71,9 +70,7 @@ class LoggedInApprovalProcurementPendingList(APIView):
         else:
             return Response({'error': 'No pending approval'})
 
-
-        
-
+     
 class ApprovalProcurementDetailsByID(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -97,11 +94,6 @@ class ApprovalProcurementDetailsByID(APIView):
             'inlineitem': serializer.data['inlineitem'],
         })
     
-
-
-    
-
-
 # Transaction ..
 class ApprovalTransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
@@ -203,7 +195,6 @@ class ApprovalTransactionViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Invalid sequence'}, status=status.HTTP_400_BAD_REQUEST)    
     
-
 
 class ApprovalTransactionUpdateAPIView(APIView):
     def put(self, request, *args, **kwargs):
@@ -313,30 +304,40 @@ class ApprovalTransactionUpdateAPIView(APIView):
 class GetProcurementApprovalTransactionDetails(APIView):
     serializer_class = ApprovalTransactionSerializer
     def get(self, request, *args, **kwargs):
-        procurement_id = int(request.query_params.get('procurementId'))
-        sequence = int(request.query_params.get('sequenceId'))
-        try:
-            instance = ApprovalTransaction.objects.get(procurementId=procurement_id, sequence=sequence)
-        except ApprovalTransaction.DoesNotExist:
-            return Response({'error': 'Approval transaction does not exist'}, status=status.HTTP_400_BAD_REQUEST)
-        # 
-        serializer = ApprovalTransactionSerializer(instance)
-        procurement_instance = MasterProcurement.objects.get(id=serializer.data['procurementId'])
-        procurement_serializer = MasterProcurementSerializer(procurement_instance)
+        if request.query_params.get('procurementId') and request.query_params.get('sequenceId'):
+            # get the procurement id and sequence id
+            procurement_id = int(request.query_params.get('procurementId')) 
+            sequence = int(request.query_params.get('sequenceId'))
+            try:
+                instance = ApprovalTransaction.objects.get(procurementId=procurement_id, sequence=sequence)
+            except ApprovalTransaction.DoesNotExist:
+                return Response({'error': 'Approval transaction does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+            # 
+            serializer = ApprovalTransactionSerializer(instance)
+            procurement_instance = MasterProcurement.objects.get(id=serializer.data['procurementId'])
+            procurement_serializer = MasterProcurementSerializer(procurement_instance)
 
-        return Response({
-            'procurementId': serializer.data['procurementId'],
-            'sequence': serializer.data['sequence'],
-            'Approver': serializer.data['approvalUserName'],
-            'Email': serializer.data['approverEmail'],
-            'RequestNumber' : procurement_serializer.data['RequestNumber'],
-            'RequestType' : procurement_serializer.data['RequestType'],
-            'Name' : procurement_serializer.data['Name'],
-            'Status' : procurement_serializer.data['Status'],
-            'IsExpenditure' : procurement_serializer.data['IsExpenditure'],
-            'inlineitem': procurement_serializer.data['inlineitem'],
-        })
+            return Response({
+                'procurementId': serializer.data['procurementId'],
+                'sequence': serializer.data['sequence'],
+                'Approver': serializer.data['approvalUserName'],
+                'Email': serializer.data['approverEmail'],
+                'RequestNumber' : procurement_serializer.data['RequestNumber'],
+                'RequestType' : procurement_serializer.data['RequestType'],
+                'Name' : procurement_serializer.data['Name'],
+                'Status' : procurement_serializer.data['Status'],
+                'IsExpenditure' : procurement_serializer.data['IsExpenditure'],
+                'inlineitem': procurement_serializer.data['inlineitem'],
+            })
+        else:
+            return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
     
+
+
+
+
+
+        
 
     
         

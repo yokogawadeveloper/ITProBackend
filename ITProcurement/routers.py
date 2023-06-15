@@ -15,6 +15,7 @@ router.register(r'mastercostcenter', MasterCostCenterViewSet, basename='masterco
 
 #-------------------------------------Procurement-------------------------------------#
 router.register(r'masterprocurement', MasterProcurementViewSet, basename='masterprocurement')
+# router.register(r'masterprocurementitem', MasterProcurementDetailViewSet, basename='masterprocurementitem')
 
 #-------------------------------------Approval-------------------------------------#
 router.register(r'approvertrans', ApprovalTransactionViewSet, basename='approvermatrix')
