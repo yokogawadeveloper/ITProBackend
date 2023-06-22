@@ -4,4 +4,4 @@ from .models import *
 # Register your models here.
 admin.site.register(MasterProcurement)
 admin.site.register(InlineItem)
-admin.site.register(MasterUpload)
+admin.site.register(Attachments)

@@ -21,14 +21,13 @@ class MasterProcurementViewSet(viewsets.ModelViewSet):
     serializer_class = MasterProcurementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
     def list(self, request, *args, **kwargs):
         user = request.user
         queryset = MasterProcurement.objects.filter(Created_by=user)
         serializer = MasterProcurementSerializer(queryset, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'] , url_path='modifiedprocurement', url_name='modifiedprocurement')
+    @action(detail=False, methods=['get'] , url_path='modifiedprocurementlist', url_name='modifiedprocurementlist')
     def modifiedprocurementlist(self, request, *args, **kwargs):
         user = request.user
         queryset = MasterProcurement.objects.filter(Created_by=user)
