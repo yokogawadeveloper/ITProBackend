@@ -18,3 +18,4 @@ router.register(r'masterprocurement', MasterProcurementViewSet, basename='master
 # router.register(r'masterprocurementitem', MasterProcurementDetailViewSet, basename='masterprocurementitem')
 
 #-------------------------------------Approval-------------------------------------#
+router.register(r'uploadfile', UploadFileViewSet, basename='uploadfile')
