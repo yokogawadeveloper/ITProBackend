@@ -1,0 +1,144 @@
+<form [formGroup]="myForm" (ngSubmit)="presentAlert()">
+    <div class="panel-group">
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                <div class="form-row">
+
+                    <div class="form-group col-md-6"
+                        [ngClass]="{'invalid': formSubmitted && myForm.get('name')?.invalid}">
+                        <label class="form-label required" for="name">Name<span>*</span></label>
+                        <input type="text" class="form-control" id="name" formControlName="name" placeholder="Name"
+                            required />
+                    </div>
+
+                    <div class="form-group col-md-6"
+                        [ngClass]="{'invalid': formSubmitted && myForm.get('department')?.invalid}">
+                        <label class="form-label required" for="department">Department<span>*</span></label>
+                        <select class="form-control" formControlName="department">
+                            <option *ngFor="let option of departmentDropdown" [value]="option.DepartmentName">
+                                {{option.DepartmentName}}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label for="remarks">Remarks</label>
+                        <textarea class="form-control" formControlName="remarks" rows="1"></textarea>
+                    </div>
+
+                    <div class="form-group col-md-6"
+                        [ngClass]="{'invalid': formSubmitted && myForm.get('isExpenditure')?.invalid}">
+                        <label class="form-label required" for="isExpenditure">Is Expenditure
+                            Budgted<span>*</span></label>
+                        <select class="form-control" formControlName="isExpenditure" required>
+                            <option value="">Choose...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <div *ngIf="myForm.get('isExpenditure')?.value === 'Yes'">
+                        <div class="form-group col-md-6">
+                            <label for="totalBudget">Total Budget</label>
+                            <input type="number" class="form-control" formControlName="totalBudget"
+                                placeholder="Total Budget" />
+                        </div>
+                        <div class="form-group col-md-6"
+                            [ngClass]="{'invalid': formSubmitted && myForm.get('utilizedBudget')?.invalid}">
+                            <label for="utilizedBudget">Utilized Budget</label>
+                            <input type="number" class="form-control" formControlName="utilizedBudget"
+                                placeholder="Utilized Budget" />
+                        </div>
+                    </div>
+                    <!-- Start of Additional Attachments -->
+                    <div class="form-group col-md-12 additional-attachments">
+                        <label for="additionalAttachments">Additional Attachments</label>
+
+                        <div formArrayName="additionalAttachments">
+                            <div *ngFor="let attachment of additionalAttachments.controls; let i = index"
+                                [formGroupName]="i">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6 files">
+                                        <input type="file" class="form-control" formControlName="attachments"
+                                            (change)="OnAttachmnetUpload($event)" ngDefaultControl>
+                                    </div>
+                                    <div class="col-md-6 delete">
+                                        <button class="btn btn-outline-secondary" type="button" id="button-addon1"
+                                            (click)="removeAttachmentField(i)">
+                                            <ion-icon name="trash-outline"></ion-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="button-group">
+                                <button size="2" class="btn btn-outline-secondary" type="button" id="button-addon1"
+                                    (click)="addAttachmentField()">
+                                    <ion-icon name="cloud-upload-outline"></ion-icon>Add More Attachments
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of Additional Attachments -->
+                    <div class="inline-table">
+                        <table class="table table-bordered">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Item</th>
+                                    <th>Cost Center</th>
+                                    <th>Quantity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody formArrayName="rows">
+                                <tr *ngFor="let row of rows.controls; let i = index" [formGroupName]="i"
+                                    [ngClass]="{'invalid': formSubmitted && row.invalid}">
+                                    <td>
+                                        <select formControlName="category" class="form-control"
+                                            [ngClass]="{'invalid-inline': formSubmitted && row.get('category')?.invalid}">
+                                            <option *ngFor="let option of categoryDropdown"
+                                                [value]="option.ItemCategory">
+                                                {{option.ItemCategory}}</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select formControlName="item" class="form-control">
+                                            <option *ngFor="let option of itemDropdown" [value]="option.ItemName">{{
+                                                option.ItemName }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select formControlName="costCenter" class="form-control">
+                                            <option *ngFor="let option of costCenterdropdown" [value]="option.id">{{
+                                                option.CostCenter }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" formControlName="quantity" class="form-control" value="1"
+                                            readonly>
+                                    </td>
+                                    <td>
+                                        <ion-button (click)="deleteRow(i)" color="danger" fill="solid" size="small">
+                                            <ion-icon name="trash-outline"></ion-icon>
+                                        </ion-button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="7">
+                                        <ion-button (click)="addRow()" color="success" fill="solid" size="small">
+                                            <ion-icon name="add-circle-outline"></ion-icon>
+                                        </ion-button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <button class="btn btn-info" type="submit">Submit</button>
+            </div>
+        </div>
+    </div>
+</form>

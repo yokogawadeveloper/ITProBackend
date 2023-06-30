@@ -1,59 +1,48 @@
-from rest_framework import permissions, status
-from rest_framework import viewsets
-from rest_framework.renderers import JSONRenderer
+from rest_framework import viewsets, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
-
+from django.contrib.auth import get_user_model
+from rest_framework import permissions
+from rest_framework.views import APIView
 from .serializers import *
 
 User = get_user_model()
+
+
 # Create your views here.
 class MasterProcurementViewSet(viewsets.ModelViewSet):
     queryset = MasterProcurement.objects.all()
     serializer_class = MasterProcurementSerializer
-    attachtmnt_serializer_class = AttachmentsSerializer
-    renderer_classes = [JSONRenderer]
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        files = self.request.FILES.getlist('Files')
-        serializer.save(Created_by=self.request.user)
-        for file in files:
-            Attachments.objects.create(file=file, request=serializer.instance)
- 
 
+class MoreAttachmentsViewSet(viewsets.ModelViewSet):
+    queryset = MoreAttachments.objects.all()
+    serializer_class = MoreAttachmentsSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = MoreAttachments.objects.all()
+        procurement_id = self.request.query_params.get('procurement_id', None)
+        if procurement_id is not None:
+            queryset = queryset.filter(procurement=procurement_id)
+        return queryset
     
-        
-  
-
-from rest_framework import generics
-from rest_framework.parsers import MultiPartParser, FormParser
-class MasterProcurementCreateAPIView(generics.CreateAPIView):
-    queryset = MasterProcurement.objects.all()
-    serializer_class = MasterProcurementSerializer2
-    parser_classes = (MultiPartParser, FormParser)
-    
-
-    
-class UploadFileViewSet(viewsets.ModelViewSet):
-    serializer_class = UploadFileSerializer
-    queryset = Attachments.objects.all()
-
     def create(self, request, *args, **kwargs):
+        procurement_id = request.data.get('procurement_id')
+        attachment = request.FILES.getlist('attachment')
         try:
-            serializers = UploadFileSerializer(data=request.data)
-            if serializers.is_valid():
-                serializers.save()
-                return Response(serializers.data, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            procurement = MasterProcurement.objects.get(id=procurement_id)
+            for i in attachment:
+                MoreAttachments.objects.create(procurement=procurement,attachment=i)
+            return Response({'status': 'success'})
+        except MasterProcurement.DoesNotExist:
+            return Response({'status': 'failed', 'message': 'Procurement not found'}, status=status.HTTP_404_NOT_FOUND)
+        
 
-from rest_framework.views import APIView
-class UploadFilesAPIView(APIView):
-    def post(self, request, *args, **kwargs):
-        try:
-            file = request.FILES['file']
-            filetype = request.POST['filetype']
-            print(filetype)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+
+        
+    
+

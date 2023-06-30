@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'ITProcurement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ITProcurement',
+        'NAME': 'ITProcurement2.0',
         'USER': 'postgres',
         'PASSWORD': 'Yil@123456',
         'HOST': 'localhost',
@@ -143,11 +143,6 @@ AUTH_USER_MODEL = 'accounts.EmployeeUser'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.MultiPartParser',  # Enable multipart form data parsing
-        'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.JSONParser',
     ],
     'TOKEN_OBTAIN_PAIR_SERIALIZER': 'rest_framework_simplejwt.serializers.CustomTokenObtainPairSerializer',
 }

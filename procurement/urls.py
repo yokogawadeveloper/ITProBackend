@@ -4,6 +4,3 @@ from .views import *
 
 
 
-urlpatterns = [
-    path('createprocurement/', MasterProcurementCreateAPIView.as_view()),
-    ]
