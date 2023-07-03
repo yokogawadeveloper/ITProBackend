@@ -51,7 +51,6 @@ class MasterItem(models.Model):
     BoolInUse = models.BooleanField(default=True, null=True, blank=True)
     IsActive = models.BooleanField(default=True, null=True, blank=True)
 
-
     objects = models.Manager()
 
     class Meta:

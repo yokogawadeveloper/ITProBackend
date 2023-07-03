@@ -3,8 +3,6 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.views import APIView
-from django.db.models import Q
 from .serializers import *
 from .models import *
 
@@ -85,6 +83,7 @@ class MasterItemViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = MasterItemSerializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 
 class MasterDepartmentViewSet(viewsets.ModelViewSet):
@@ -161,5 +160,5 @@ class MasterCostCenterViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-    
+
     
