@@ -23,7 +23,7 @@ class MasterProcurementSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         inlineitems_data = validated_data.pop('inlineitem')
         user = self.context['request'].user
-        masterprocurement = MasterProcurement.objects.create(Created_by=user,Updated_by=user,**validated_data)
+        masterprocurement = MasterProcurement.objects.create(Created_by=user, Updated_by=user, **validated_data)
         # create inlineitems
         for track_data in inlineitems_data:
             InlineItem.objects.create(procurement=masterprocurement, **track_data)
@@ -50,18 +50,7 @@ class MasterProcurementSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class MoreAttachmentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = MoreAttachments
-        fields = ['procurement','attachment', 'filetype',]
-
-    
-    
-
-    
-
-        
-
-
-
+        fields = ['procurement', 'attachment', 'filetype', ]

@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from procurement.models import MasterProcurement
 
 User = get_user_model()
+
+
 # Create your models here.
 class ApproverMatrix(models.Model):
     request_type = models.CharField(max_length=100, blank=True, null=True)
@@ -16,7 +18,8 @@ class ApproverMatrix(models.Model):
 
 
 class ApprovalTransaction(models.Model):
-    CHOICES = (('BuHead', 'BuHead'), ('DSINHead', 'DSINHead'),('FinanceHead', 'FinanceHead'),('MD', 'MD'),('DSINMPR', 'DSINMPR'))
+    CHOICES = (('BuHead', 'BuHead'), ('DSINHead', 'DSINHead'), ('FinanceHead', 'FinanceHead'), ('MD', 'MD'),
+               ('DSINMPR', 'DSINMPR'))
     TYPE = (('Approved', 'Approved'), ('Modification', 'Modification'), ('Reject', 'Reject'))
     procurementId = models.ForeignKey(MasterProcurement, on_delete=models.CASCADE)
     approvalUserName = models.CharField(max_length=100, blank=True, null=True)
@@ -29,10 +32,7 @@ class ApprovalTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     class Meta:
         db_table = "ApprovalTransaction"
         verbose_name_plural = "ApprovalTransaction"
         ordering = ['id']
-
-

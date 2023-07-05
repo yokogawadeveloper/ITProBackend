@@ -1,9 +1,7 @@
-from rest_framework import viewsets, status
-from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.response import Response
-from django.contrib.auth import get_user_model
 from rest_framework import permissions
-from rest_framework.views import APIView
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+
 from .serializers import *
 
 User = get_user_model()

@@ -1,7 +1,10 @@
 import datetime
+from django.db import models
+from django.contrib.auth import get_user_model
 from master.models import *
 
 User = get_user_model()
+
 
 
 # Create your models here.
@@ -36,7 +39,8 @@ class MasterProcurement(models.Model):
 
 
 class InlineItem(models.Model):
-    procurement = models.ForeignKey(MasterProcurement, related_name='inlineitem', on_delete=models.CASCADE, null=True,blank=True)
+    procurement = models.ForeignKey(MasterProcurement, related_name='inlineitem', on_delete=models.CASCADE, null=True,
+                                    blank=True)
     category = models.CharField(max_length=100, null=True, blank=True)
     item = models.CharField(max_length=100, null=True, blank=True)
     costcenter = models.ForeignKey(MasterCostCenter, on_delete=models.CASCADE, null=True, blank=True)

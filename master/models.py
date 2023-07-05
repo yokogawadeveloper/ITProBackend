@@ -1,7 +1,4 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-
-# User = get_user_model()
 
 # Create your models here.
 class OrgDepartment(models.Model):
@@ -86,4 +83,5 @@ class MasterCostCenter(models.Model):
     class Meta:
         db_table = "MasterCostCenter"
         verbose_name_plural = "MasterCostCenter"
+
 

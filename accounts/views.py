@@ -1,11 +1,10 @@
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from approval.models import ApprovalTransaction,ApproverMatrix
 from .serializers import *
 
 User = get_user_model()
@@ -24,14 +23,42 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return Response({'detail': 'No active account found with the given credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if serializer.is_valid():
-            return Response({
-                'access': serializer.validated_data['access'],
-                'refresh': serializer.validated_data['refresh'],
-                'username': user.username,
-                'email': user.email,
-            })
+            if user is  not None:
+                
+                approver = ApprovalTransaction.objects.filter(approvalUserName = user.username).order_by('-id').first()
+                if approver is not None:
+                    return Response({
+                        'access': serializer.validated_data['access'],
+                        'refresh': serializer.validated_data['refresh'],
+                        'username': user.username,
+                        'email': user.email,
+                        'name': user.name,
+                        'is_approver': True,
+                    })
+                else:
+                    return Response({
+                        'access': serializer.validated_data['access'],
+                        'refresh': serializer.validated_data['refresh'],
+                        'username': user.username,
+                        'email': user.email,
+                        'name': user.name,
+                        'is_approver': False,
+                    })
+            else:
+                return Response({
+                    'access': serializer.validated_data['access'],
+                    'refresh': serializer.validated_data['refresh'],
+                    'username': user.username,
+                    'email': user.email,
+                    'name': user.name,
+                    'is_approver': False,
+                }, status=status.HTTP_200_OK)
+
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'message': 'Invalid username or password',
+                'data': serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EmployeeUserAPIView(generics.RetrieveAPIView):
