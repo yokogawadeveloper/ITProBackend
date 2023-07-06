@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'ITProcurement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ITProcurement2.0',
+        'NAME': 'ITProcurement',
         'USER': 'postgres',
         'PASSWORD': 'Yil@123456',
         'HOST': 'localhost',

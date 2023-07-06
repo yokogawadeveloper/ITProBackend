@@ -74,34 +74,3 @@ class EmployeeUser(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'EmployeeUser'
         ordering = ['id']
 
-
-class MasterRole(models.Model):
-    roleId = models.AutoField(primary_key=True)
-    rolename = models.CharField(max_length=100, null=True, blank=True)
-    isActive = models.BooleanField(default=True, null=True, blank=True)
-    created_by = models.ForeignKey(EmployeeUser, related_name='+', null=True, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_by = models.ForeignKey(EmployeeUser, related_name='+', null=True, on_delete=models.CASCADE)
-    updated_at = models.DateTimeField(auto_now_add=True, null=True)
-
-    objects = models.Manager()
-
-    class Meta:
-        db_table = "MasterRole"
-        verbose_name_plural = "MasterRole"
-
-
-class MasterRoleMapping(models.Model):
-    roleId = models.ForeignKey(MasterRole, null=True, blank=True, on_delete=models.CASCADE)
-    employeeId = models.ForeignKey(EmployeeUser, null=True, blank=True, on_delete=models.CASCADE)
-    isActive = models.BooleanField(default=True, null=True, blank=True)
-    created_by = models.ForeignKey(EmployeeUser, related_name='+', null=True, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_by = models.ForeignKey(EmployeeUser, related_name='+', null=True, on_delete=models.CASCADE)
-    updated_at = models.DateTimeField(auto_now_add=True, null=True)
-
-    objects = models.Manager()
-
-    class Meta:
-        db_table = "MasterRoleMapping"
-        verbose_name_plural = "MasterRoleMapping"

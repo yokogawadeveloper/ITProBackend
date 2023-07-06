@@ -11,15 +11,7 @@ class EmployeeUserAdmin(admin.ModelAdmin):
 admin.site.register(EmployeeUser, EmployeeUserAdmin)
 
 
-@admin.register(MasterRole)
-class MasterRoleAdmin(admin.ModelAdmin):
-    list_display = ('roleId', 'rolename', 'isActive')
 
-
-
-@admin.register(MasterRoleMapping)
-class MasterRoleMappingAdmin(admin.ModelAdmin):
-    list_display = ('id','roleId', 'employeeId', 'isActive')
 
 
 

@@ -1,8 +1,11 @@
 from rest_framework import routers
 from master.views import *
 from procurement.views import *
+from accounts.views import *
 
 router = routers.DefaultRouter()
+
+
 
 # -------------------------------------Master-------------------------------------#
 router.register(r'mastercategory', MasterCategoryViewSet, basename='mastercategory')
