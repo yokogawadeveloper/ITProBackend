@@ -3,9 +3,12 @@ from rest_framework import permissions
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import viewsets
 
 from procurement.serializers import *
 from .serializers import *
+from .models import *
+from rest_framework.decorators import action
 
 User = get_user_model()
 
@@ -19,11 +22,9 @@ class ApprovalAuthenticateAPIView(APIView):
         ApproverUser1 = ApprovalTransaction.objects.filter(approvalUserName=user).first()
         # get the first object of the queryset
 
-
-
-
         print('ApproverUser', ApproverUser1)
-        ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending')).order_by('sequence')
+        ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending')).order_by(
+            'sequence')
         # print('ApprovalUser', ApprovalUser)
         if ApprovalUser.exists():
             serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
@@ -359,3 +360,45 @@ class GetProcurementApprovalTransactionDetails(APIView):
             })
         else:
             return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetModuleAccessViewSet(viewsets.ModelViewSet):
+    serializer_class = ModuleAccessSerializer
+    queryset = ModuleAccess.objects.all()
+
+    def get_queryset(self):
+        queryset = ModuleAccess.objects.all()
+        return queryset
+
+    @action(methods=['post'], detail=False, url_path='getModuleAccess')
+    def getModuleAccess(self, request):
+        data = request.data
+        is_admin = data['is_admin']
+        is_approver = data['is_approver']
+        is_dsin = data['is_dsin']
+        is_requester = data['is_requester']
+
+        module_ids = []
+        print(is_admin, is_approver, is_dsin, is_requester)
+
+        if is_admin == True:
+            queryset = ModuleAccess.objects.filter(is_admin=True).values_list('moduleId_id', flat=True)
+            module_ids = list(queryset)
+
+        if is_approver == True:
+            queryset = ModuleAccess.objects.filter(is_approver=True).values_list('moduleId_id', flat=True)
+            module_ids.extend(list(queryset))
+
+        if is_dsin == True:
+            queryset = ModuleAccess.objects.filter(is_dsin=True).values_list('moduleId_id', flat=True)
+            module_ids.extend(list(queryset))
+
+        if is_requester == True:
+            queryset = ModuleAccess.objects.filter(is_requester=True).values_list('moduleId_id', flat=True)
+            module_ids.extend(list(queryset))
+
+        module_ids = list(set(module_ids))
+        return Response({
+            'message': 'success',
+            'module_ids': module_ids
+        })

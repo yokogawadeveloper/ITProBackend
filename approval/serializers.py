@@ -3,7 +3,6 @@ from rest_framework import serializers
 from .models import *
 
 User =  get_user_model()
-
 # Create serialiazers here..
 class ApproverMatrixSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,7 +20,11 @@ class ApprovalTransactionSerializer(serializers.ModelSerializer):
 
         
 
-
+class ModuleAccessSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModuleAccess
+        fields = '__all__'
+        # depth = 1
 
 
 

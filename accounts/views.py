@@ -31,6 +31,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                         if user_type is not None:
                             role_name = MasterRole.objects.filter(roleId=user_type).values('rolename')[0]['rolename']
                             if role_name == 'Admin':
+
                                 return Response({
                                     'access': serializer.validated_data['access'],
                                     'refresh': serializer.validated_data['refresh'],
@@ -42,6 +43,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                                     'user_name': user.name,
                                     'user_email': user.email,
                                 })
+
                             elif role_name == 'DSIN':
                                 return Response({
                                     'access': serializer.validated_data['access'],
@@ -198,6 +200,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 'data': serializer.errors,
             }, status=status.HTTP_400_BAD_REQUEST)
            
+
 
 
 class EmployeeUserAPIView(generics.RetrieveAPIView):
