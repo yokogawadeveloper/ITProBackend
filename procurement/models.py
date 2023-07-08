@@ -47,6 +47,8 @@ class InlineItem(models.Model):
     quantity = models.IntegerField(default=0, null=True, blank=True)
     unitprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     totalprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
+    # dateFrom = models.DateField(null=True, blank=True, default=datetime.date.today)
+    # dateTo = models.DateField(null=True, blank=True, default=datetime.date.today)
 
     objects = models.Manager()
 

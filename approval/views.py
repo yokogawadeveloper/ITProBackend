@@ -1,14 +1,15 @@
+import json
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from rest_framework import permissions
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import viewsets
 
 from procurement.serializers import *
 from .serializers import *
-from .models import *
-from rest_framework.decorators import action
 
 User = get_user_model()
 
@@ -378,6 +379,8 @@ class GetModuleAccessViewSet(viewsets.ModelViewSet):
         is_dsin = data['is_dsin']
         is_requester = data['is_requester']
 
+        arr = []
+
         module_ids = []
         print(is_admin, is_approver, is_dsin, is_requester)
 
@@ -398,7 +401,27 @@ class GetModuleAccessViewSet(viewsets.ModelViewSet):
             module_ids.extend(list(queryset))
 
         module_ids = list(set(module_ids))
+
+        for i in module_ids:
+            root = ModuleMaster.objects.filter(moduleId=i).values('root')[0]['root']
+            if root == 'ROOT':
+                filter_module_root = ModuleMaster.objects.filter(moduleId=i)
+                filter_module_root = ModuleMasterSerializer(filter_module_root, many=True, context={'request': request})
+                filter_module_root = filter_module_root.data
+                filter_module_submenu = ModuleMaster.objects.filter(root=i, moduleId__in=module_ids)
+                filter_module_submenu = ModuleMasterSerializer(filter_module_submenu, many=True, context={'request': request})
+                filter_module_submenu = filter_module_submenu.data
+
+                arr.append({"module_id": filter_module_root[0]['moduleId'],
+                            "module_name": filter_module_root[0]['module_name'],
+                            "module_slug": filter_module_root[0]['module_slug'],
+                            "root": filter_module_root[0]['root'],
+                            "m_color": filter_module_root[0]['m_color'],
+                            "m_icon_name": filter_module_root[0]['m_icon_name'],
+                            "m_link": filter_module_root[0]['m_link'],
+                            "root_module": filter_module_submenu})
+
         return Response({
             'message': 'success',
-            'module_ids': module_ids
+            'module_ids': arr
         })
