@@ -69,59 +69,59 @@ def create_approval_transaction(sender, instance, created, **kwargs):
         if not appmat:
             pass
 
-
-@receiver(post_save, sender=MasterProcurement)
-def update_approval_transaction(sender, instance, created, **kwargs):
-    if not created:
-        print('update_approval_transaction')
-        from approval.models import ApprovalTransaction
-        apptrans = ApprovalTransaction.objects.filter(procurementId=instance).order_by('sequence')
-        for app in apptrans:
-            if app.sequence == 1:
-                userOrgDept = User.objects.get(id=instance.Created_by.id).OrgDepartmentId
-                userOrgDeptHead = OrgDepartmentHead.objects.filter(OrgDepartment_id=userOrgDept).first()
-                userOrgDeptHeadEmail = User.objects.get(username=userOrgDeptHead.Head).email
-                approverEmail = userOrgDeptHeadEmail
-                userId = User.objects.get(username=userOrgDeptHead.Head)
-                # update approval transaction
-                ApprovalTransaction.objects.filter(procurementId=instance, approverType='BuHead').update(
-                    approverEmail=approverEmail, approvalUserName=userId.username, status='Pending')
-
-            elif app.sequence == 2:
-                email = 'Jiya.K@yokogawa.com'
-                user = User.objects.get(email=email)
-                approvalName = user.username
-                # update approval transaction
-                ApprovalTransaction.objects.filter(procurementId=instance, approverType='DSINHead').update(
-                    approverEmail=email, approvalUserName=approvalName)
-
-            elif app.sequence == 3:
-                email = 'ganeshchandra.p@yokogawa.com'
-                user = User.objects.get(email=email)
-                approvalName = user.username
-                # update approval transaction
-                ApprovalTransaction.objects.filter(procurementId=instance, approverType='FinanceHead').update(
-                    approverEmail=email, approvalUserName=approvalName)
-
-            elif app.sequence == 4:
-                email = 'sajiv.nath@yokogawa.com'
-                user = User.objects.get(email=email)
-                approvalName = user.username
-                # update approval transaction
-                ApprovalTransaction.objects.filter(procurementId=instance, approverType='MD').update(
-                    approverEmail=email, approvalUserName=approvalName)
-
-
-            elif app.sequence == 5:
-                email = 'Naveen.R@yokogawa.com'
-                user = User.objects.get(email=email)
-                approvalName = user.username
-                # update approval transaction
-                ApprovalTransaction.objects.filter(procurementId=instance, approverType='DSINMPR').update(
-                    approverEmail=email, approvalUserName=approvalName)
-
-            else:
-                pass
-
-        if not apptrans:
-            pass
+#
+# @receiver(post_save, sender=MasterProcurement)
+# def update_approval_transaction(sender, instance, created, **kwargs):
+#     if not created:
+#         print('update_approval_transaction')
+#         from approval.models import ApprovalTransaction
+#         apptrans = ApprovalTransaction.objects.filter(procurementId=instance).order_by('sequence')
+#         for app in apptrans:
+#             if app.sequence == 1:
+#                 userOrgDept = User.objects.get(id=instance.Created_by.id).OrgDepartmentId
+#                 userOrgDeptHead = OrgDepartmentHead.objects.filter(OrgDepartment_id=userOrgDept).first()
+#                 userOrgDeptHeadEmail = User.objects.get(username=userOrgDeptHead.Head).email
+#                 approverEmail = userOrgDeptHeadEmail
+#                 userId = User.objects.get(username=userOrgDeptHead.Head)
+#                 # update approval transaction
+#                 ApprovalTransaction.objects.filter(procurementId=instance, approverType='BuHead').update(
+#                     approverEmail=approverEmail, approvalUserName=userId.username, status='Pending')
+#
+#             elif app.sequence == 2:
+#                 email = 'Jiya.K@yokogawa.com'
+#                 user = User.objects.get(email=email)
+#                 approvalName = user.username
+#                 # update approval transaction
+#                 ApprovalTransaction.objects.filter(procurementId=instance, approverType='DSINHead').update(
+#                     approverEmail=email, approvalUserName=approvalName)
+#
+#             elif app.sequence == 3:
+#                 email = 'ganeshchandra.p@yokogawa.com'
+#                 user = User.objects.get(email=email)
+#                 approvalName = user.username
+#                 # update approval transaction
+#                 ApprovalTransaction.objects.filter(procurementId=instance, approverType='FinanceHead').update(
+#                     approverEmail=email, approvalUserName=approvalName)
+#
+#             elif app.sequence == 4:
+#                 email = 'sajiv.nath@yokogawa.com'
+#                 user = User.objects.get(email=email)
+#                 approvalName = user.username
+#                 # update approval transaction
+#                 ApprovalTransaction.objects.filter(procurementId=instance, approverType='MD').update(
+#                     approverEmail=email, approvalUserName=approvalName)
+#
+#
+#             elif app.sequence == 5:
+#                 email = 'Naveen.R@yokogawa.com'
+#                 user = User.objects.get(email=email)
+#                 approvalName = user.username
+#                 # update approval transaction
+#                 ApprovalTransaction.objects.filter(procurementId=instance, approverType='DSINMPR').update(
+#                     approverEmail=email, approvalUserName=approvalName)
+#
+#             else:
+#                 pass
+#
+#         if not apptrans:
+#             pass

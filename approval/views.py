@@ -1,5 +1,3 @@
-import json
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from rest_framework import permissions
 from rest_framework import status
@@ -15,30 +13,94 @@ User = get_user_model()
 
 
 # Create your views here.
-class ApprovalAuthenticateAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+class GetModuleAccessViewSet(viewsets.ModelViewSet):
+    serializer_class = ModuleAccessSerializer
+    queryset = ModuleAccess.objects.all()
 
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        ApproverUser1 = ApprovalTransaction.objects.filter(approvalUserName=user).first()
-        # get the first object of the queryset
+    def get_queryset(self):
+        queryset = ModuleAccess.objects.all()
+        return queryset
 
-        print('ApproverUser', ApproverUser1)
-        ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending')).order_by(
-            'sequence')
-        # print('ApprovalUser', ApprovalUser)
-        if ApprovalUser.exists():
-            serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
-            is_approver = True
-            return Response({
-                'is_approver': is_approver,
-                'username': serializer.data[0]['approvalUserName'],
-                'email': serializer.data[0]['approverEmail'],
-            })
-        else:
-            is_approver = False
-            return Response({'is_approver': is_approver})
+    @action(methods=['post'], detail=False, url_path='getModuleAccess')
+    def getModuleAccess(self, request):
+        data = request.data
+        is_admin = data['is_admin']
+        is_approver = data['is_approver']
+        is_dsin = data['is_dsin']
+        is_requester = data['is_requester']
 
+        arr = []
+
+        module_ids = []
+        print(is_admin, is_approver, is_dsin, is_requester)
+
+        if is_admin == True:
+            queryset = ModuleAccess.objects.filter(is_admin=True).values_list('moduleId_id', flat=True)
+            module_ids = list(queryset)
+
+        if is_approver == True:
+            queryset = ModuleAccess.objects.filter(is_approver=True).values_list('moduleId_id', flat=True)
+            module_ids.extend(list(queryset))
+
+        if is_dsin == True:
+            queryset = ModuleAccess.objects.filter(is_dsin=True).values_list('moduleId_id', flat=True)
+            module_ids.extend(list(queryset))
+
+        if is_requester == True:
+            queryset = ModuleAccess.objects.filter(is_requester=True).values_list('moduleId_id', flat=True)
+            module_ids.extend(list(queryset))
+
+        module_ids = list(set(module_ids))
+
+        for i in module_ids:
+            root = ModuleMaster.objects.filter(moduleId=i).values('root')[0]['root']
+            if root == 'ROOT':
+                filter_module_root = ModuleMaster.objects.filter(moduleId=i)
+                filter_module_root = ModuleMasterSerializer(filter_module_root, many=True, context={'request': request})
+                filter_module_root = filter_module_root.data
+                filter_module_submenu = ModuleMaster.objects.filter(root=i, moduleId__in=module_ids)
+                filter_module_submenu = ModuleMasterSerializer(filter_module_submenu, many=True, context={'request': request})
+                filter_module_submenu = filter_module_submenu.data
+
+                arr.append({"module_id": filter_module_root[0]['moduleId'],
+                            "module_name": filter_module_root[0]['module_name'],
+                            "module_slug": filter_module_root[0]['module_slug'],
+                            "root": filter_module_root[0]['root'],
+                            "m_color": filter_module_root[0]['m_color'],
+                            "m_icon_name": filter_module_root[0]['m_icon_name'],
+                            "m_link": filter_module_root[0]['m_link'],
+                            "root_module": filter_module_submenu})
+
+        return Response({
+            'message': 'success',
+            'module_ids': arr
+        })
+    
+#
+# class ApprovalAuthenticateAPIView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def get(self, request, *args, **kwargs):
+#         user = request.user
+#         ApproverUser1 = ApprovalTransaction.objects.filter(approvalUserName=user).first()
+#         # get the first object of the queryset
+#
+#         print('ApproverUser', ApproverUser1)
+#         ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending')).order_by(
+#             'sequence')
+#         # print('ApprovalUser', ApprovalUser)
+#         if ApprovalUser.exists():
+#             serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
+#             is_approver = True
+#             return Response({
+#                 'is_approver': is_approver,
+#                 'username': serializer.data[0]['approvalUserName'],
+#                 'email': serializer.data[0]['approverEmail'],
+#             })
+#         else:
+#             is_approver = False
+#             return Response({'is_approver': is_approver})
+#
 
 class ApprovalProcurementPendingList(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -69,6 +131,7 @@ class ApprovalProcurementPendingList(APIView):
                         'RequestType': procurement_serializer.data['RequestType'],
                         'Name': procurement_serializer.data['Name'],
                         'Status': procurement_serializer.data['Status'],
+                        'TotalAmount': procurement_serializer.data['TotalAmount'],
                     }
                 }
                 data_list.append(updated_data)
@@ -104,7 +167,7 @@ class ApprovalUpdateStatusAPIView(APIView):
 
                     # Update the MasterProcurement instance
                     procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                    procurement_instance.Status = 'Approved By BuHead'
+                    procurement_instance.Status = 'Stage 1 Approved'
                     procurement_instance.save()
 
                     serializer.save()
@@ -122,7 +185,7 @@ class ApprovalUpdateStatusAPIView(APIView):
 
                         # Update the MasterProcurement instance
                         procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved Stage 2'
+                        procurement_instance.Status = 'Stage 2 Approved'
                         procurement_instance.save()
 
                         serializer.save()
@@ -142,7 +205,7 @@ class ApprovalUpdateStatusAPIView(APIView):
 
                         # Update the MasterProcurement instance
                         procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved Stage 3'
+                        procurement_instance.Status = 'Stage 3 Approved'
                         procurement_instance.save()
 
                         serializer.save()
@@ -202,9 +265,8 @@ class ApprovalUpdateStatusAPIView(APIView):
                     instance.save()
                     # Update the MasterProcurement instance
                     procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                    procurement_instance.Status = 'Modification By BuHead'
+                    procurement_instance.Status = 'Stage 1 Modification'
                     procurement_instance.save()
-
                     serializer.save()
                     return Response(serializer.data)
 
@@ -218,7 +280,7 @@ class ApprovalUpdateStatusAPIView(APIView):
                         instance.save()
                         # Update the MasterProcurement instance
                         procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved Stage 2'
+                        procurement_instance.Status = 'Stage 2 Modification'
                         procurement_instance.save()
                         serializer.save()
                         return Response(serializer.data)
@@ -236,7 +298,7 @@ class ApprovalUpdateStatusAPIView(APIView):
                         instance.save()
                         # Update the MasterProcurement instance
                         procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved Stage 3'
+                        procurement_instance.Status = 'Stage 3 Modification'
                         procurement_instance.save()
                         serializer.save()
                         return Response(serializer.data)
@@ -254,7 +316,7 @@ class ApprovalUpdateStatusAPIView(APIView):
                         instance.save()
                         # Update the MasterProcurement instance
                         procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved Stage 4'
+                        procurement_instance.Status = 'Stage 4 Modification'
                         procurement_instance.save()
                         serializer.save()
                         return Response(serializer.data)
@@ -272,7 +334,7 @@ class ApprovalUpdateStatusAPIView(APIView):
                         instance.save()
                         # Update the MasterProcurement instance
                         procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved'
+                        procurement_instance.Status = 'Stage 4 Modification'
                         procurement_instance.save()
 
                         serializer.save()
@@ -362,66 +424,3 @@ class GetProcurementApprovalTransactionDetails(APIView):
         else:
             return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
 
-
-class GetModuleAccessViewSet(viewsets.ModelViewSet):
-    serializer_class = ModuleAccessSerializer
-    queryset = ModuleAccess.objects.all()
-
-    def get_queryset(self):
-        queryset = ModuleAccess.objects.all()
-        return queryset
-
-    @action(methods=['post'], detail=False, url_path='getModuleAccess')
-    def getModuleAccess(self, request):
-        data = request.data
-        is_admin = data['is_admin']
-        is_approver = data['is_approver']
-        is_dsin = data['is_dsin']
-        is_requester = data['is_requester']
-
-        arr = []
-
-        module_ids = []
-        print(is_admin, is_approver, is_dsin, is_requester)
-
-        if is_admin == True:
-            queryset = ModuleAccess.objects.filter(is_admin=True).values_list('moduleId_id', flat=True)
-            module_ids = list(queryset)
-
-        if is_approver == True:
-            queryset = ModuleAccess.objects.filter(is_approver=True).values_list('moduleId_id', flat=True)
-            module_ids.extend(list(queryset))
-
-        if is_dsin == True:
-            queryset = ModuleAccess.objects.filter(is_dsin=True).values_list('moduleId_id', flat=True)
-            module_ids.extend(list(queryset))
-
-        if is_requester == True:
-            queryset = ModuleAccess.objects.filter(is_requester=True).values_list('moduleId_id', flat=True)
-            module_ids.extend(list(queryset))
-
-        module_ids = list(set(module_ids))
-
-        for i in module_ids:
-            root = ModuleMaster.objects.filter(moduleId=i).values('root')[0]['root']
-            if root == 'ROOT':
-                filter_module_root = ModuleMaster.objects.filter(moduleId=i)
-                filter_module_root = ModuleMasterSerializer(filter_module_root, many=True, context={'request': request})
-                filter_module_root = filter_module_root.data
-                filter_module_submenu = ModuleMaster.objects.filter(root=i, moduleId__in=module_ids)
-                filter_module_submenu = ModuleMasterSerializer(filter_module_submenu, many=True, context={'request': request})
-                filter_module_submenu = filter_module_submenu.data
-
-                arr.append({"module_id": filter_module_root[0]['moduleId'],
-                            "module_name": filter_module_root[0]['module_name'],
-                            "module_slug": filter_module_root[0]['module_slug'],
-                            "root": filter_module_root[0]['root'],
-                            "m_color": filter_module_root[0]['m_color'],
-                            "m_icon_name": filter_module_root[0]['m_icon_name'],
-                            "m_link": filter_module_root[0]['m_link'],
-                            "root_module": filter_module_submenu})
-
-        return Response({
-            'message': 'success',
-            'module_ids': arr
-        })

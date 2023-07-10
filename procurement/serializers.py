@@ -9,7 +9,7 @@ User = get_user_model()
 class InlineItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InlineItem
-        fields = ['category', 'item', 'costcenter', 'quantity', 'unitprice', 'totalprice']
+        fields = ['category', 'item', 'costcenter', 'quantity', 'unitprice', 'totalprice','datefrom','dateto']
 
 
 class MasterProcurementSerializer(serializers.ModelSerializer):
@@ -18,7 +18,7 @@ class MasterProcurementSerializer(serializers.ModelSerializer):
     class Meta:
         model = MasterProcurement
         fields = ['id', 'RequestNumber', 'RequestType', 'Name', 'Department', 'IsExpenditure', 'TotalBudget',
-                  'UtilizedBudget', 'Remarks', 'PurchaseDate', 'Age', 'DeviceType', 'Status', 'inlineitem']
+                  'UtilizedBudget', 'Remarks', 'PurchaseDate', 'Age', 'DeviceType', 'Status','TotalAmount', 'inlineitem']
 
     def create(self, validated_data):
         inlineitems_data = validated_data.pop('inlineitem')
