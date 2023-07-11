@@ -1,7 +1,10 @@
+from django.db.models import Q
 from rest_framework import permissions
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from approval.serializers import *
 from .serializers import *
 
 User = get_user_model()
@@ -14,17 +17,29 @@ class MasterProcurementViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        # queryset = MasterProcurement.objects.filter(Created_by=user, Status='Pending').order_by('-id')
+        queryset = MasterProcurement.objects.filter(Created_by=user).order_by('-id')
+        serializer = MasterProcurementSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path=r'getmodificationlist')
+    def get(self, request, format=None):
+        user = request.user
+        procurement = MasterProcurement.objects.filter(Q(Created_by=user) & Q(Status='Modification'))
+        serializer = MasterProcurementSerializer(procurement, many=True)
+        return Response(serializer.data)
+        
+
+
+
+
 class MoreAttachmentsViewSet(viewsets.ModelViewSet):
     queryset = MoreAttachments.objects.all()
     serializer_class = MoreAttachmentsSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        queryset = MoreAttachments.objects.all()
-        procurement_id = self.request.query_params.get('procurement_id', None)
-        if procurement_id is not None:
-            queryset = queryset.filter(procurement=procurement_id)
-        return queryset
     
     def create(self, request, *args, **kwargs):
         procurement_id = request.data.get('procurement_id')

@@ -12,7 +12,7 @@ def create_approval_transaction(sender, instance, created, **kwargs):
     if created:
         from approval.models import ApprovalTransaction, ApproverMatrix
         appmat = ApproverMatrix.objects.filter(request_type=instance.RequestType).order_by('sequence')
-        print('Approver Matrix: ', appmat)
+        # print('Approver Matrix: ', appmat)
         for app in appmat:
             if app.sequence == 1:
                 userOrgDept = User.objects.get(id=instance.Created_by.id).OrgDepartmentId

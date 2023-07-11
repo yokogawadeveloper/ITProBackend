@@ -3,8 +3,6 @@ from rest_framework import serializers
 from .models import *
 
 User = get_user_model()
-
-
 # Create your serializers here.
 class InlineItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,12 +16,13 @@ class MasterProcurementSerializer(serializers.ModelSerializer):
     class Meta:
         model = MasterProcurement
         fields = ['id', 'RequestNumber', 'RequestType', 'Name', 'Department', 'IsExpenditure', 'TotalBudget',
-                  'UtilizedBudget', 'Remarks', 'PurchaseDate', 'Age', 'DeviceType', 'Status','TotalAmount', 'inlineitem']
+                  'UtilizedBudget', 'Remarks', 'PurchaseDate', 'Age', 'DeviceType', 'Status','TotalAmount', 'Created_by','inlineitem']
 
     def create(self, validated_data):
         inlineitems_data = validated_data.pop('inlineitem')
-        user = self.context['request'].user
-        masterprocurement = MasterProcurement.objects.create(Created_by=user, Updated_by=user, **validated_data)
+        request = self.context.get('request')
+        user = request.user
+        masterprocurement = MasterProcurement.objects.create(Created_by=user,Updated_by=user,**validated_data)
         # create inlineitems
         for track_data in inlineitems_data:
             InlineItem.objects.create(procurement=masterprocurement, **track_data)
