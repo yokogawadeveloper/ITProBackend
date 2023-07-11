@@ -83,6 +83,15 @@ class MasterItemViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = MasterItemSerializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['post'], detail=False, url_path='getItemListBasedOnCategory')
+    def getItemListBasedOnCategory(self, request):
+        data = request.data
+        ItemCategoryId = data['ItemCategoryId']
+        filter_data = self.get_queryset().filter(ItemCategoryId=ItemCategoryId)
+        serializer = MasterItemSerializer(filter_data, many=True, context={'request': request})
+        serializer_data = serializer.data
+        return Response(serializer_data)
     
 
 

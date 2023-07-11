@@ -104,6 +104,9 @@ class ApprovalProcurementPendingList(APIView):
                         'Name': procurement_serializer.data['Name'],
                         'Status': procurement_serializer.data['Status'],
                         'TotalAmount': procurement_serializer.data['TotalAmount'],
+                        'TotalBudget': procurement_serializer.data['TotalBudget'],
+                        'UtilizedBudget': procurement_serializer.data['UtilizedBudget'],
+                        'Department': procurement_serializer.data['Department'],
                     }
                 }
                 data_list.append(updated_data)
@@ -369,6 +372,9 @@ class ApprovalProcurementModificationList(APIView):
                         'RequestType': procurement_serializer.data['RequestType'],
                         'Name': procurement_serializer.data['Name'],
                         'Status': procurement_serializer.data['Status'],
+                        'TotalBudget': procurement_serializer.data['TotalBudget'],
+                        'UtilizedBudget': procurement_serializer.data['UtilizedBudget'],
+                        'Department': procurement_serializer.data['Department'],
                     }
                 }
                 data_list.append(updated_data)
@@ -403,6 +409,9 @@ class GetProcurementApprovalTransactionDetails(APIView):
                 'Name': procurement_serializer.data['Name'],
                 'Status': procurement_serializer.data['Status'],
                 'IsExpenditure': procurement_serializer.data['IsExpenditure'],
+                'TotalBudget': procurement_serializer.data['TotalBudget'],
+                'UtilizedBudget': procurement_serializer.data['UtilizedBudget'],
+                'Department': procurement_serializer.data['Department'],
                 'inlineitem': procurement_serializer.data['inlineitem'],
             })
         else:
