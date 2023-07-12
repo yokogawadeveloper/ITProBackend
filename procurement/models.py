@@ -45,7 +45,6 @@ class InlineItem(models.Model):
     category = models.CharField(max_length=100, null=True, blank=True)
     item = models.CharField(max_length=100, null=True, blank=True)
     costcenter = models.CharField(max_length=100, null=True, blank=True)
-    # costcenter = models.ForeignKey(MasterCostCenter, on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.IntegerField(default=0, null=True, blank=True)
     unitprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     totalprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)

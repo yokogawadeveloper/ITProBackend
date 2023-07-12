@@ -26,11 +26,13 @@ class ApprovalTransaction(models.Model):
     approverEmail = models.EmailField(max_length=100, blank=True, null=True)
     sequence = models.IntegerField(default=0, blank=True, null=True)
     approverType = models.CharField(max_length=100, blank=True, null=True, choices=CHOICES)
-    status = models.CharField(max_length=100, blank=True, null=True, default='Pending')
+    status = models.CharField(max_length=100, blank=True, null=True)
     remarks = models.CharField(max_length=100, blank=True, null=True)
     approvaldatetime = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = models.Manager()
 
     class Meta:
         db_table = "ApprovalTransaction"

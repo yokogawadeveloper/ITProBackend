@@ -5,12 +5,11 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django.utils import timezone
 from procurement.serializers import *
 from .serializers import *
 
 User = get_user_model()
-
 
 # Create your views here.
 class GetModuleAccessViewSet(viewsets.ModelViewSet):
@@ -56,7 +55,8 @@ class GetModuleAccessViewSet(viewsets.ModelViewSet):
                 filter_module_root = ModuleMasterSerializer(filter_module_root, many=True, context={'request': request})
                 filter_module_root = filter_module_root.data
                 filter_module_submenu = ModuleMaster.objects.filter(root=i, moduleId__in=module_ids)
-                filter_module_submenu = ModuleMasterSerializer(filter_module_submenu, many=True, context={'request': request})
+                filter_module_submenu = ModuleMasterSerializer(filter_module_submenu, many=True,
+                                                               context={'request': request})
                 filter_module_submenu = filter_module_submenu.data
 
                 arr.append({"module_id": filter_module_root[0]['moduleId'],
@@ -72,47 +72,44 @@ class GetModuleAccessViewSet(viewsets.ModelViewSet):
             'message': 'success',
             'module_ids': arr
         })
-    
+
+
 
 class ApprovalProcurementPendingList(APIView):
     permission_classes = [permissions.IsAuthenticated]
-
     def get(self, request, *args, **kwargs):
         user = request.user
-        ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending'))
+        transaction = ApprovalTransaction.objects.filter(approvalUserName=user, status='Pending')
+        serializer = ApprovalTransactionSerializer(transaction, many=True, context={'request': request})
 
-        if ApprovalUser.exists():
-            serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
-            data_list = []
-            for data in serializer.data:
-                procurement = MasterProcurement.objects.get(id=data['procurementId'])
-                procurement_serializer = MasterProcurementSerializer(procurement)
-                updated_data = {
-                    'id': data['id'],
-                    'approvalUserName': data['approvalUserName'],
-                    'approverEmail': data['approverEmail'],
-                    'sequence': data['sequence'],
-                    'approverType': data['approverType'],
-                    'status': data['status'],
-                    'procurementId': {
-                        'id': data['procurementId'],
-                        'sequence': data['sequence'],  # Include the sequence here
-                        'approverType': data['approverType'],
-                        'sequence_status': data['status'],  # Include the status here
-                        'RequestNumber': procurement_serializer.data['RequestNumber'],
-                        'RequestType': procurement_serializer.data['RequestType'],
-                        'Name': procurement_serializer.data['Name'],
-                        'Status': procurement_serializer.data['Status'],
-                        'TotalAmount': procurement_serializer.data['TotalAmount'],
-                        'TotalBudget': procurement_serializer.data['TotalBudget'],
-                        'UtilizedBudget': procurement_serializer.data['UtilizedBudget'],
-                        'Department': procurement_serializer.data['Department'],
-                    }
-                }
-                data_list.append(updated_data)
-            return Response(data_list)
-        else:
-            return Response({'error': 'No pending approval'})
+        if serializer.data[0]['sequence'] == 1:
+            return Response({
+                'message': 'success',
+                'data': serializer.data
+            })
+
+        elif serializer.data[0]['sequence'] > 1:
+            previous_transaction = ApprovalTransaction.objects.filter(procurementId=serializer.data[0]['procurementId'], sequence=serializer.data[0]['sequence']-1)
+            # check if previous transaction is approved
+            if previous_transaction:
+                status = previous_transaction[0].status
+                if status == 'Approved':
+                    return Response({
+                        'message': 'success',
+                        'data': serializer.data
+                    })
+                else:
+                    return Response({
+                        'message': 'failed',
+                        'data': []
+                    })
+
+            else:
+                return Response({
+                    'message': 'failed',
+                    'data': []
+                })
+
 
 
 class ApprovalUpdateStatusAPIView(APIView):
@@ -129,217 +126,54 @@ class ApprovalUpdateStatusAPIView(APIView):
                 return Response({
                     'message': 'Approval transaction does not exist',
                     'status': 'failed'
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = ApprovalTransactionSerializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
 
-            if request.data['status'] == 'Approved':
-                if sequence == 1:
-                    # Update the ApprovalTransaction instance
-                    instance.status = request.data['status']
-                    instance.create_by = request.user
-                    instance.update_by = request.user
-                    instance.save()
-                    # Update the MasterProcurement instance
-                    procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                    procurement_instance.Status = 'Approved'
-                    procurement_instance.save()
-                    serializer.save()
-                    return Response(serializer.data)
+            if sequence == 1:
+                previous_approver_email = instance.approverEmail
+                previous_approver_sequence = instance.sequence
+                instance.status = request.data['status']
+                instance.approvaldatetime = datetime.datetime.now(tz=timezone.utc)
+                instance.create_by = request.user
+                instance.update_by = request.user
+                instance.save()
+                # Update the next approver status
+                new_sequence_number = previous_approver_sequence + 1
+                if new_sequence_number == 2:
+                    next_approver = ApprovalTransaction.objects.filter(procurementId=procurement_id,
+                                                                       sequence=new_sequence_number).values(
+                        'approverEmail')[0]['approverEmail']
+                    if next_approver == previous_approver_email:
+                        ApprovalTransaction.objects.filter(procurementId=procurement_id,
+                                                           sequence=new_sequence_number).update(
+                            status=request.data['status'], approvaldatetime=datetime.datetime.now(tz=timezone.utc))
+                # Update the MasterProcurement instance
+                procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
+                procurement_instance.Status = request.data['status']
+                procurement_instance.save()
+                serializer.save()
+                return Response(serializer.data)
 
-                elif sequence == 2:
-                    sequence_1_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=1, status='Approved').exists()
-                    if sequence_1_approved:
-                        # Update the ApprovalTransaction instance
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-                                        
-                elif sequence == 3:
-                    sequence_2_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=2, status='Approved').exists()
-                    if sequence_2_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
 
-                elif sequence == 4:
-                    sequence_3_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=3, status='Approved').exists()
-                    if sequence_3_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                elif sequence == 5:
-                    sequence_4_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=4, status='Approved').exists()
-                    if sequence_4_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Approved'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                else:
-                    return Response({
-                        'error': 'Invalid sequence',
-                        'status': 'failed'
-                        }, status=status.HTTP_400_BAD_REQUEST)
-
-            elif request.data['status'] == 'Modification':
-                if sequence == 1:
-                    instance.status = request.data['status']
-                    instance.create_by = request.user
-                    instance.update_by = request.user
-                    instance.save()
-                    # Update the MasterProcurement instance
-                    procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                    procurement_instance.Status = 'Modification'
-                    procurement_instance.save()
-                    serializer.save()
-                    return Response(serializer.data)
-                
-                elif sequence == 2:
-                    sequence_1_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=1, status='Approved').exists()
-                    if sequence_1_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Modification'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required for modification',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                elif sequence == 3:
-                    sequence_2_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=2, status='Approved').exists()
-                    if sequence_2_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Modification'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required for modification',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                elif sequence == 4:
-                    sequence_3_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=3, status='Approved').exists()
-                    if sequence_3_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Modification'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required for modification',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                elif sequence == 5:
-                    sequence_4_approved = ApprovalTransaction.objects.filter(procurementId=instance.procurementId,
-                                                                             sequence=4, status='Approved').exists()
-                    if sequence_4_approved:
-                        instance.status = request.data['status']
-                        instance.create_by = request.user
-                        instance.update_by = request.user
-                        instance.save()
-                        # Update the MasterProcurement instance
-                        procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
-                        procurement_instance.Status = 'Stage 4 Modification'
-                        procurement_instance.save()
-                        serializer.save()
-                        return Response(serializer.data)
-                    else:
-                        return Response({
-                            'error': 'Higher sequence approval is required for modification',
-                            'status': 'failed'
-                            }, status=status.HTTP_400_BAD_REQUEST)
-
-                else:
-                    return Response({
-                        'error': 'Invalid sequence',
-                        'status': 'failed'
-                        }, status=status.HTTP_400_BAD_REQUEST)
-
-            else:
-                return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+            elif sequence != 1:
+                instance.status = request.data['status']
+                instance.approvaldatetime = datetime.datetime.now(tz=timezone.utc)
+                instance.create_by = request.user
+                instance.update_by = request.user
+                instance.save()
+                # Update the MasterProcurement instance
+                procurement_instance = MasterProcurement.objects.get(id=instance.procurementId.id)
+                procurement_instance.Status = request.data['status']
+                procurement_instance.save()
+                serializer.save()
+                return Response(serializer.data)
         else:
             return Response({
-                'error': 'You are not authorized to perform this action'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+                'message': 'Please provide the procurementId and sequenceId',
+                'status': 'failed'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ApprovalProcurementModificationList(APIView):
@@ -385,6 +219,7 @@ class ApprovalProcurementModificationList(APIView):
 
 class GetProcurementApprovalTransactionDetails(APIView):
     serializer_class = ApprovalTransactionSerializer
+
     def get(self, request, *args, **kwargs):
         if request.query_params.get('procurementId') and request.query_params.get('sequenceId'):
             # get the procurement id and sequence id
@@ -417,3 +252,66 @@ class GetProcurementApprovalTransactionDetails(APIView):
         else:
             return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
 
+#
+# class ApprovalProcurementPendingList(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     def get(self, request, *args, **kwargs):
+#         user = request.user
+#         ApprovalUser = ApprovalTransaction.objects.filter(Q(approvalUserName=user) & Q(status='Pending'))
+#         if ApprovalUser.exists():
+#             serializer = ApprovalTransactionSerializer(ApprovalUser, many=True)
+#             data_list = []
+#             for data in serializer.data:
+#                 procurement = MasterProcurement.objects.get(id=data['procurementId'])
+#                 if procurement:
+#                     procurement_serializer = MasterProcurementSerializer(procurement)
+#                     updated_data = {
+#                         'id': data['id'],
+#                         'approvalUserName': data['approvalUserName'],
+#                         'approverEmail': data['approverEmail'],
+#                         'sequence': data['sequence'],
+#                         'approverType': data['approverType'],
+#                         'status': data['status'],
+#                         'procurementId': {
+#                             'id': data['procurementId'],
+#                             'sequence': data['sequence'],  # Include the sequence here
+#                             'approverType': data['approverType'],
+#                             'sequence_status': data['status'],  # Include the status here
+#                             'RequestNumber': procurement_serializer.data['RequestNumber'],
+#                             'RequestType': procurement_serializer.data['RequestType'],
+#                             'Name': procurement_serializer.data['Name'],
+#                             'Status': procurement_serializer.data['Status'],
+#                             'TotalAmount': procurement_serializer.data['TotalAmount'],
+#                             'TotalBudget': procurement_serializer.data['TotalBudget'],
+#                             'UtilizedBudget': procurement_serializer.data['UtilizedBudget'],
+#                             'Department': procurement_serializer.data['Department'],
+#                         }
+#                     }
+#                     data_list.append(updated_data)
+#                     return Response(data_list)
+#                 else:
+#                     return Response({'error': 'No pending approval'})
+#         else:
+#             return Response({'error': 'No pending approval'})
+
+#
+# class ApprovalProcurementPendingList(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def get(self, request, *args, **kwargs):
+#         user = request.user
+#         transaction = ApprovalTransaction.objects.filter(approverEmail=user.email, status='Pending').values(
+#             'procurementId')
+#         procurement_ids = [i['procurementId'] for i in transaction]
+#         previous_sequence = 1
+#         if len(procurement_ids) > 0:
+#             previous_sequence = \
+#             ApprovalTransaction.objects.filter(procurementId__in=procurement_ids).values('sequence').order_by(
+#                 '-sequence')[0]['sequence']
+#
+#         procurement_list = MasterProcurement.objects.filter(id__in=procurement_ids)
+#         serializer = MasterProcurementSerializer(procurement_list, many=True, context={'request': request})
+#         return Response({
+#             'message': 'success',
+#             'procurement_list': serializer.data
+#         })
